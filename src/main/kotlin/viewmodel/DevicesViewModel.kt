@@ -57,6 +57,8 @@ class DevicesViewModel : ViewModel(), KoinComponent {
     private val _selectedDevice = MutableStateFlow<AdbDevice?>(null)
     val selectedDevice: StateFlow<AdbDevice?> get() = _selectedDevice.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     init {
         startDevicePolling()
@@ -77,11 +79,10 @@ class DevicesViewModel : ViewModel(), KoinComponent {
         if (devices.isEmpty()) {
             _selectedDevice.value = null
             adbDevicePoller.disconnect()
-        } else if (_selectedDevice.value == null) {
+        } else if (_selectedDevice.value == null || !devices.contains(_selectedDevice.value)) {
             devices.firstOrNull()?.let { device ->
                 _selectedDevice.value = device
                 adbDevicePoller.connect(device)
-                refreshDeviceInfo()
             }
         }
     }
@@ -117,6 +118,7 @@ class DevicesViewModel : ViewModel(), KoinComponent {
     }
 
     fun refreshDeviceInfo() {
+        _isLoading.value = true
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 // 并发执行所有命令
@@ -176,6 +178,8 @@ class DevicesViewModel : ViewModel(), KoinComponent {
                 )
             } catch (e: Exception) {
                 _deviceInfo.value = DeviceInfo(error = "获取设备信息失败: ${e.message}")
+            } finally {
+                _isLoading.value = false
             }
         }
     }

@@ -24,9 +24,13 @@ fun AppNavGraph(
         composable(NavScreen.Devices.id) {
             DevicesScreen(devicesViewModel)
         }
-        composable(NavScreen.Home.id) {
-            HomeScreen()
-        }
+//        composable(NavScreen.Home.id) {
+//            HomeScreen(
+//                onNavigateToBattery = {},
+//                onNavigateToDevice = {},
+//                onNavigateToNetwork = {},
+//                onNavigateToStorage = {})
+//        }
         composable(NavScreen.File.id) {
             FileScreen()
         }

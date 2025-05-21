@@ -1,5 +1,6 @@
 package ui.devices
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,191 +29,216 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
     val selectedDevice by viewModel.selectedDevice.collectAsState()
     val deviceInfo by viewModel.deviceInfo.collectAsState()
     val connectedDevices by viewModel.connectedDevices.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     val scrollState = rememberScrollState()
     var expanded by remember { mutableStateOf(false) }
 
+    // 初始加载
     LaunchedEffect(Unit) {
         viewModel.refreshDeviceInfo()
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-    ) {
-        // 设备选择器
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            OutlinedTextField(
-                value = selectedDevice?.deviceId ?: "未连接",
-                onValueChange = {},
-                readOnly = true,
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(Res.drawable.devices),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                },
-                trailingIcon = {
-                    Icon(
-                        painter = painterResource(Res.drawable.arrowDropDown),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor()
-            )
-
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                connectedDevices.forEach { device ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = device.deviceId,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        },
-                        onClick = {
-                            viewModel.connect(device)
-                            expanded = false
-                        },
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                }
-            }
+    // 当选择的设备改变时重新加载
+    LaunchedEffect(selectedDevice) {
+        if (selectedDevice != null) {
+            viewModel.refreshDeviceInfo()
         }
+    }
 
-        // 设备信息卡片
-        ElevatedCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            shape = RoundedCornerShape(28.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    InfoCard(
-                        title = "CPU",
-                        value = "${deviceInfo.cpuInfo.cores} cores",
-                        subtitle = deviceInfo.cpuInfo.frequency,
-                        icon = Res.drawable.cpu
-                    )
-                    InfoCard(
-                        title = "内存",
-                        value = "${deviceInfo.memoryUsagePercent}%",
-                        subtitle = "${deviceInfo.usedMemory} / ${deviceInfo.totalMemory}",
-                        icon = Res.drawable.memory
-                    )
-                    InfoCard(
-                        title = "存储",
-                        value = "${deviceInfo.storageUsagePercent}%",
-                        subtitle = "${deviceInfo.availableStorage} / ${deviceInfo.totalStorage}",
-                        icon = Res.drawable.storage
-                    )
-                }
-            }
-        }
-
-        // 详细信息部分
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
         ) {
-            // CPU 信息
-            InfoSection(
-                title = "CPU 信息",
-                icon = Res.drawable.cpu
+            // 设备选择器
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                DeviceInfoItem("架构", deviceInfo.cpuInfo.architecture)
-                DeviceInfoItem("核心数", "${deviceInfo.cpuInfo.cores} cores")
-                DeviceInfoItem("缓存", deviceInfo.cpuInfo.cache)
+                OutlinedTextField(
+                    value = selectedDevice?.deviceId ?: "未连接",
+                    onValueChange = {},
+                    readOnly = true,
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(Res.drawable.devices),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    trailingIcon = {
+                        Icon(
+                            painter = painterResource(Res.drawable.arrowDropDown),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor()
+                )
 
-                if (deviceInfo.cpuInfo.frequencies.isNotEmpty()) {
-                    DeviceInfoItem("当前频率", deviceInfo.cpuInfo.frequency)
-                    if (deviceInfo.cpuInfo.frequencies.size > 1) {
-                        DeviceInfoItem("所有核心频率", deviceInfo.cpuInfo.frequencies.joinToString(", "))
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    connectedDevices.forEach { device ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = device.deviceId,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            },
+                            onClick = {
+                                viewModel.connect(device)
+                                expanded = false
+                            },
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                        )
                     }
-
-                    CpuFrequencyChart(
-                        frequencies = deviceInfo.cpuInfo.frequencies,
-                        modifier = Modifier
-                            .padding(vertical = 8.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 硬件信息
-            InfoSection(
-                title = "硬件信息",
-                icon = Res.drawable.hardware
+            // 设备信息卡片
+            ElevatedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(28.dp)
             ) {
-                DeviceInfoItemWithProgress(
-                    label = "内存使用",
-                    value = "${deviceInfo.usedMemory} / ${deviceInfo.totalMemory}",
-                    progress = deviceInfo.memoryUsagePercent / 100f,
-                    progressText = "${deviceInfo.memoryUsagePercent.toInt()}%",
-                    progressColor = MaterialTheme.colorScheme.primary
-                )
-
-                DeviceInfoItemWithProgress(
-                    label = "存储使用",
-                    value = "${deviceInfo.availableStorage} / ${deviceInfo.totalStorage}",
-                    progress = deviceInfo.storageUsagePercent / 100f,
-                    progressText = "${deviceInfo.storageUsagePercent.toInt()}%",
-                    progressColor = MaterialTheme.colorScheme.primary
-                )
-
-                DeviceInfoItem(
-                    "电池状态",
-                    "${deviceInfo.batteryLevel}% ${if (deviceInfo.isCharging) "(充电中)" else ""}",
-                    Res.drawable.battery
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        InfoCard(
+                            title = "CPU",
+                            value = "${deviceInfo.cpuInfo.cores} cores",
+                            subtitle = deviceInfo.cpuInfo.frequency,
+                            icon = Res.drawable.cpu
+                        )
+                        InfoCard(
+                            title = "内存",
+                            value = "${deviceInfo.memoryUsagePercent}%",
+                            subtitle = "${deviceInfo.usedMemory} / ${deviceInfo.totalMemory}",
+                            icon = Res.drawable.memory
+                        )
+                        InfoCard(
+                            title = "存储",
+                            value = "${deviceInfo.storageUsagePercent}%",
+                            subtitle = "${deviceInfo.availableStorage} / ${deviceInfo.totalStorage}",
+                            icon = Res.drawable.storage
+                        )
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 网络信息
-            InfoSection(
-                title = "网络信息",
-                icon = Res.drawable.network
+            // 详细信息部分
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp)
             ) {
-                DeviceInfoItem(
-                    "WiFi",
-                    if (deviceInfo.wifiEnabled) "已启用" else "已禁用",
-                    if (deviceInfo.wifiEnabled) Res.drawable.wifi else Res.drawable.wifiOff
+                // CPU 信息
+                InfoSection(
+                    title = "CPU 信息",
+                    icon = Res.drawable.cpu
+                ) {
+                    DeviceInfoItem("架构", deviceInfo.cpuInfo.architecture)
+                    DeviceInfoItem("核心数", "${deviceInfo.cpuInfo.cores} cores")
+                    DeviceInfoItem("缓存", deviceInfo.cpuInfo.cache)
+
+                    if (deviceInfo.cpuInfo.frequencies.isNotEmpty()) {
+                        DeviceInfoItem("当前频率", deviceInfo.cpuInfo.frequency)
+                        if (deviceInfo.cpuInfo.frequencies.size > 1) {
+                            DeviceInfoItem("所有核心频率", deviceInfo.cpuInfo.frequencies.joinToString(", "))
+                        }
+
+                        CpuFrequencyChart(
+                            frequencies = deviceInfo.cpuInfo.frequencies,
+                            modifier = Modifier
+                                .padding(vertical = 8.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 硬件信息
+                InfoSection(
+                    title = "硬件信息",
+                    icon = Res.drawable.hardware
+                ) {
+                    DeviceInfoItemWithProgress(
+                        label = "内存使用",
+                        value = "${deviceInfo.usedMemory} / ${deviceInfo.totalMemory}",
+                        progress = deviceInfo.memoryUsagePercent / 100f,
+                        progressText = "${deviceInfo.memoryUsagePercent.toInt()}%",
+                        progressColor = MaterialTheme.colorScheme.primary
+                    )
+
+                    DeviceInfoItemWithProgress(
+                        label = "存储使用",
+                        value = "${deviceInfo.availableStorage} / ${deviceInfo.totalStorage}",
+                        progress = deviceInfo.storageUsagePercent / 100f,
+                        progressText = "${deviceInfo.storageUsagePercent.toInt()}%",
+                        progressColor = MaterialTheme.colorScheme.primary
+                    )
+
+                    DeviceInfoItem(
+                        "电池状态",
+                        "${deviceInfo.batteryLevel}% ${if (deviceInfo.isCharging) "(充电中)" else ""}",
+                        Res.drawable.battery
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 网络信息
+                InfoSection(
+                    title = "网络信息",
+                    icon = Res.drawable.network
+                ) {
+                    DeviceInfoItem(
+                        "WiFi",
+                        if (deviceInfo.wifiEnabled) "已启用" else "已禁用",
+                        if (deviceInfo.wifiEnabled) Res.drawable.wifi else Res.drawable.wifiOff
+                    )
+                    DeviceInfoItem(
+                        "移动数据",
+                        if (deviceInfo.mobileDataEnabled) "已启用" else "已禁用",
+                        if (deviceInfo.mobileDataEnabled) Res.drawable.NetworkCell else Res.drawable.NetworkCellOff
+                    )
+                    DeviceInfoItem("IP 地址", deviceInfo.ipAddress)
+                }
+            }
+        }
+
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(48.dp),
+                    color = MaterialTheme.colorScheme.primary
                 )
-                DeviceInfoItem(
-                    "移动数据",
-                    if (deviceInfo.mobileDataEnabled) "已启用" else "已禁用",
-                    if (deviceInfo.mobileDataEnabled) Res.drawable.NetworkCell else Res.drawable.NetworkCellOff
-                )
-                DeviceInfoItem("IP 地址", deviceInfo.ipAddress)
             }
         }
     }
