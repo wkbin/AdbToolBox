@@ -54,8 +54,8 @@ class DevicesViewModel : ViewModel(), KoinComponent {
     private val _connectedDevices = MutableStateFlow<List<AdbDevice>>(emptyList())
     val connectedDevices: StateFlow<List<AdbDevice>> get() = _connectedDevices.asStateFlow()
 
-    private val _selectedDeviceId = MutableStateFlow("")
-    val selectedDeviceId: StateFlow<String> get() = _selectedDeviceId.asStateFlow()
+    private val _selectedDevice = MutableStateFlow<AdbDevice?>(null)
+    val selectedDevice: StateFlow<AdbDevice?> get() = _selectedDevice.asStateFlow()
 
 
     init {
@@ -75,21 +75,26 @@ class DevicesViewModel : ViewModel(), KoinComponent {
      */
     private fun updateSelectedDevice(devices: List<AdbDevice>) {
         if (devices.isEmpty()) {
-            _selectedDeviceId.value = ""
+            _selectedDevice.value = null
             adbDevicePoller.disconnect()
-        } else if (_selectedDeviceId.value.isEmpty()) {
+        } else if (_selectedDevice.value == null) {
             devices.firstOrNull()?.let { device ->
-                _selectedDeviceId.value = device.deviceId
+                _selectedDevice.value = device
                 adbDevicePoller.connect(device)
                 refreshDeviceInfo()
             }
         }
     }
 
+    fun connect(device: AdbDevice){
+        adbDevicePoller.connect(device)
+        _selectedDevice.value = device
+    }
+
     private fun startCpuUpdates() {
         viewModelScope.launch(Dispatchers.IO) {
             while (isActive) {
-                if (_selectedDeviceId.value.isEmpty()){
+                if (_selectedDevice.value == null){
                     continue
                 }
 

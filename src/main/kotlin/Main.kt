@@ -8,7 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.jixin.translato.toolbox.generated.resources.Res
 import com.jixin.translato.toolbox.generated.resources.app_name
@@ -22,7 +21,6 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import runtime.AdbStore
 import runtime.initAdbRuntime
-import viewmodel.DevicesViewModel
 
 val LocalWindow = compositionLocalOf<ComposeWindow> { error("Window not provided") }
 
