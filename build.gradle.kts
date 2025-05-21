@@ -51,8 +51,11 @@ afterEvaluate {
 }
 
 compose.resources {
-    customDirectory(sourceSetName = "main", directoryProvider =
-        layout.buildDirectory.dir("copiedComposeResources")
+    customDirectory(
+        sourceSetName = "main",
+        directoryProvider = layout.buildDirectory.dir(
+            "copiedComposeResources"
+        )
     )
 }
 
@@ -64,6 +67,13 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(compose.components.resources)
     implementation(libs.kotlinx.serialization)
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.navigation.compose)
+    // Material 3
+    implementation(compose.material3)
+    // Koin
+    implementation(libs.koin.core)
+    implementation(libs.koin.compose)
 }
 
 compose.desktop {

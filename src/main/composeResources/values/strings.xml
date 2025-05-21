@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="apk">APK</string>
+
+    <string name="app_name">ADB工具箱</string>
+    <string name="devices">设备</string>
+    <string name="home">主页</string>
+    <string name="file">文件</string>
+    <string name="settings">设置</string>
+</resources>

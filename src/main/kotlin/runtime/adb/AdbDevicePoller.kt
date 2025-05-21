@@ -29,6 +29,7 @@ class AdbDevicePoller(
                         val wifiState = adb.wifiState(deviceId)
                         AdbDevice(deviceId, wifiState)
                     }
+                    onResult.invoke(devices)
                 } catch (e: Exception) {
                     // Handle error silently, will try again on next poll
                 }
