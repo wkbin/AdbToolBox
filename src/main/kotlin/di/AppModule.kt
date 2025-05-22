@@ -8,6 +8,7 @@ import runtime.AdbStore
 import runtime.ContextStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import runtime.KeepShell
 import java.io.File
 
 val appModule = module {
@@ -23,4 +24,5 @@ val appModule = module {
     }
     single { CoroutineScope(Dispatchers.IO) }
     single { AdbDevicePoller(get(), get()) }
+    single { KeepShell(get(), get()) }
 } 

@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import runtime.AdbStore
 import runtime.adb.env.AppContext
 
 class AdbDevicePoller(
@@ -14,6 +15,7 @@ class AdbDevicePoller(
     companion object {
         private const val POLLING_INTERVAL_MS = 3000L
     }
+
 
     private var pollingJob: Job? = null
     private var currentDevice: AdbDevice? = null

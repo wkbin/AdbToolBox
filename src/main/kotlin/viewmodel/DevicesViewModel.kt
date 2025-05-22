@@ -129,6 +129,7 @@ class DevicesViewModel : ViewModel(), KoinComponent {
         println("Debug - Starting CPU updates")
         viewModelScope.launch(Dispatchers.IO) {
             while (isActive) {
+                delay(500) // 每0.5秒更新一次
                 if (_selectedDevice.value == null) {
                     println("Debug - No device selected, skipping CPU update")
                     continue
@@ -142,7 +143,7 @@ class DevicesViewModel : ViewModel(), KoinComponent {
 
                     _cpuInfo.value = _cpuInfo.value.copy(frequencies = frequencies)
 
-                    delay(500) // 每0.5秒更新一次
+
                 } catch (e: Exception) {
                     println("Debug - Error updating CPU frequencies: ${e.message}")
                     e.printStackTrace()
