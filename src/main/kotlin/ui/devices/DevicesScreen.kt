@@ -20,6 +20,7 @@ import com.jixin.translato.toolbox.generated.resources.wifi
 import com.jixin.translato.toolbox.generated.resources.wifiOff
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import ui.devices.components.CpuFrequencyChart
 import viewmodel.DevicesViewModel
 
@@ -28,6 +29,11 @@ import viewmodel.DevicesViewModel
 fun DevicesScreen(viewModel: DevicesViewModel) {
     val selectedDevice by viewModel.selectedDevice.collectAsState()
     val deviceInfo by viewModel.deviceInfo.collectAsState()
+    val cpuInfo by viewModel.cpuInfo.collectAsState()
+    val memoryInfo by viewModel.memoryInfo.collectAsState()
+    val batteryInfo by viewModel.batteryInfo.collectAsState()
+    val storageInfo by viewModel.storageInfo.collectAsState()
+    val networkInfo by viewModel.networkInfo.collectAsState()
     val connectedDevices by viewModel.connectedDevices.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val scrollState = rememberScrollState()
@@ -60,7 +66,7 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 OutlinedTextField(
-                    value = selectedDevice?.deviceId ?: "未连接",
+                    value = selectedDevice?.deviceId ?: stringResource(Res.string.no_device_connected),
                     onValueChange = {},
                     readOnly = true,
                     leadingIcon = {
@@ -128,20 +134,20 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                     ) {
                         InfoCard(
                             title = "CPU",
-                            value = "${deviceInfo.cpuInfo.cores} cores",
-                            subtitle = deviceInfo.cpuInfo.frequency,
+                            value = "${cpuInfo.cores} cores",
+                            subtitle = cpuInfo.frequency,
                             icon = Res.drawable.cpu
                         )
                         InfoCard(
                             title = "内存",
-                            value = "${deviceInfo.memoryUsagePercent}%",
-                            subtitle = "${deviceInfo.usedMemory} / ${deviceInfo.totalMemory}",
+                            value = "${memoryInfo.usagePercent}%",
+                            subtitle = "${memoryInfo.used} / ${memoryInfo.total}",
                             icon = Res.drawable.memory
                         )
                         InfoCard(
                             title = "存储",
-                            value = "${deviceInfo.storageUsagePercent}%",
-                            subtitle = "${deviceInfo.availableStorage} / ${deviceInfo.totalStorage}",
+                            value = "${storageInfo.usagePercent}%",
+                            subtitle = "${storageInfo.used} / ${storageInfo.total}",
                             icon = Res.drawable.storage
                         )
                     }
@@ -157,18 +163,18 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                     title = "CPU 信息",
                     icon = Res.drawable.cpu
                 ) {
-                    DeviceInfoItem("架构", deviceInfo.cpuInfo.architecture)
-                    DeviceInfoItem("核心数", "${deviceInfo.cpuInfo.cores} cores")
-                    DeviceInfoItem("缓存", deviceInfo.cpuInfo.cache)
+                    DeviceInfoItem("架构", cpuInfo.architecture)
+                    DeviceInfoItem("核心数", "${cpuInfo.cores} cores")
+                    DeviceInfoItem("缓存", cpuInfo.cache)
 
-                    if (deviceInfo.cpuInfo.frequencies.isNotEmpty()) {
-                        DeviceInfoItem("当前频率", deviceInfo.cpuInfo.frequency)
-                        if (deviceInfo.cpuInfo.frequencies.size > 1) {
-                            DeviceInfoItem("所有核心频率", deviceInfo.cpuInfo.frequencies.joinToString(", "))
+                    if (cpuInfo.frequencies.isNotEmpty()) {
+                        DeviceInfoItem("当前频率", cpuInfo.frequency)
+                        if (cpuInfo.frequencies.size > 1) {
+                            DeviceInfoItem("所有核心频率", cpuInfo.frequencies.joinToString(", "))
                         }
 
                         CpuFrequencyChart(
-                            frequencies = deviceInfo.cpuInfo.frequencies,
+                            frequencies = cpuInfo.frequencies,
                             modifier = Modifier
                                 .padding(vertical = 8.dp)
                                 .clip(RoundedCornerShape(16.dp))
@@ -185,25 +191,87 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                 ) {
                     DeviceInfoItemWithProgress(
                         label = "内存使用",
-                        value = "${deviceInfo.usedMemory} / ${deviceInfo.totalMemory}",
-                        progress = deviceInfo.memoryUsagePercent / 100f,
-                        progressText = "${deviceInfo.memoryUsagePercent.toInt()}%",
+                        value = memoryInfo.used,
+                        progress = memoryInfo.usagePercent / 100f,
+                        progressText = "${memoryInfo.usagePercent.toInt()}%",
                         progressColor = MaterialTheme.colorScheme.primary
                     )
 
+                    if (memoryInfo.swapTotal.isNotEmpty() && memoryInfo.swapTotal != "0 B") {
+                        DeviceInfoItemWithProgress(
+                            label = "虚拟内存",
+                            value = "${memoryInfo.swapUsed} / ${memoryInfo.swapTotal}",
+                            progress = memoryInfo.swapUsagePercent / 100f,
+                            progressText = "${memoryInfo.swapUsagePercent.toInt()}%",
+                            progressColor = MaterialTheme.colorScheme.tertiary
+                        )
+                        DeviceInfoItem("交换缓存", memoryInfo.swapCached)
+                    }
+
                     DeviceInfoItemWithProgress(
                         label = "存储使用",
-                        value = "${deviceInfo.availableStorage} / ${deviceInfo.totalStorage}",
-                        progress = deviceInfo.storageUsagePercent / 100f,
-                        progressText = "${deviceInfo.storageUsagePercent.toInt()}%",
+                        value = "${storageInfo.used} / ${storageInfo.total}",
+                        progress = storageInfo.usagePercent / 100f,
+                        progressText = "${storageInfo.usagePercent.toInt()}%",
                         progressColor = MaterialTheme.colorScheme.primary
                     )
 
                     DeviceInfoItem(
-                        "电池状态",
-                        "${deviceInfo.batteryLevel}% ${if (deviceInfo.isCharging) "(充电中)" else ""}",
-                        Res.drawable.battery
+                        "Root状态",
+                        if (deviceInfo.isRooted) stringResource(Res.string.enabled) else stringResource(Res.string.disabled),
+                        if (deviceInfo.isRooted) Res.drawable.shield else Res.drawable.shieldOff
                     )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 电池信息
+                InfoSection(
+                    title = "电池信息",
+                    icon = Res.drawable.battery
+                ) {
+                    DeviceInfoItemWithProgress(
+                        label = "电池电量",
+                        value = "${batteryInfo.level}%",
+                        progress = batteryInfo.level / 100f,
+                        progressText = "${batteryInfo.level}%",
+                        progressColor = when {
+                            batteryInfo.level <= 20 -> MaterialTheme.colorScheme.error
+                            batteryInfo.level <= 50 -> MaterialTheme.colorScheme.tertiary
+                            else -> MaterialTheme.colorScheme.primary
+                        }
+                    )
+
+                    DeviceInfoItem(
+                        "充电状态",
+                        when {
+                            batteryInfo.isAcPowered -> "交流电充电"
+                            batteryInfo.isUsbPowered -> "USB充电"
+                            batteryInfo.isWirelessPowered -> "无线充电"
+                            else -> getBatteryStatusString(batteryInfo.status)
+                        },
+                        when {
+                            batteryInfo.isAcPowered -> Res.drawable.power
+                            batteryInfo.isUsbPowered -> Res.drawable.usb
+                            batteryInfo.isWirelessPowered -> Res.drawable.wireless
+                            else -> Res.drawable.battery
+                        }
+                    )
+
+                    DeviceInfoItem("电池健康", getBatteryHealthString(batteryInfo.health))
+                    DeviceInfoItem("电池技术", batteryInfo.technology)
+                    DeviceInfoItem("电池电压", "${batteryInfo.voltage}mV")
+                    DeviceInfoItem("电池温度", String.format("%.1f°C", batteryInfo.temperature))
+                    
+                    if (batteryInfo.maxChargingCurrent > 0) {
+                        DeviceInfoItem("最大充电电流", "${batteryInfo.maxChargingCurrent}mA")
+                    }
+                    if (batteryInfo.maxChargingVoltage > 0) {
+                        DeviceInfoItem("最大充电电压", "${batteryInfo.maxChargingVoltage}mV")
+                    }
+                    if (batteryInfo.chargeCounter > 0) {
+                        DeviceInfoItem("充电计数器", batteryInfo.chargeCounter.toString())
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -214,16 +282,16 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                     icon = Res.drawable.network
                 ) {
                     DeviceInfoItem(
-                        "WiFi",
-                        if (deviceInfo.wifiEnabled) "已启用" else "已禁用",
-                        if (deviceInfo.wifiEnabled) Res.drawable.wifi else Res.drawable.wifiOff
+                        label ="WiFi",
+                        if (networkInfo.wifiEnabled) stringResource(Res.string.enabled) else stringResource(Res.string.disabled),
+                        if (networkInfo.wifiEnabled) Res.drawable.wifi else Res.drawable.wifiOff
                     )
                     DeviceInfoItem(
-                        "移动数据",
-                        if (deviceInfo.mobileDataEnabled) "已启用" else "已禁用",
-                        if (deviceInfo.mobileDataEnabled) Res.drawable.NetworkCell else Res.drawable.NetworkCellOff
+                        label = stringResource(Res.string.mobile_data),
+                        if (networkInfo.mobileDataEnabled) stringResource(Res.string.enabled) else stringResource(Res.string.disabled),
+                        if (networkInfo.mobileDataEnabled) Res.drawable.NetworkCell else Res.drawable.NetworkCellOff
                     )
-                    DeviceInfoItem("IP 地址", deviceInfo.ipAddress)
+                    DeviceInfoItem(stringResource(Res.string.ip_address), networkInfo.ipAddress)
                 }
             }
         }
@@ -419,5 +487,30 @@ private fun DeviceInfoItemWithProgress(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+
+private fun getBatteryHealthString(health: Int): String {
+    return when (health) {
+        1 -> "未知"
+        2 -> "良好"
+        3 -> "过热"
+        4 -> "已损坏"
+        5 -> "过压"
+        6 -> "未知错误"
+        7 -> "温度过低"
+        else -> "未知"
+    }
+}
+
+private fun getBatteryStatusString(status: Int): String {
+    return when (status) {
+        1 -> "未知"
+        2 -> "充电中"
+        3 -> "放电中"
+        4 -> "未充电"
+        5 -> "已充满"
+        else -> "未知"
     }
 }
